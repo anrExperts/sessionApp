@@ -6,7 +6,10 @@ declare
 %output:html-version('5.0')
 function test:index() {
 <html>
-    <h1>{user:current() || ' ' || session:id() || ' ' || session:created() || ' ' || fn:string-join(sessions:ids(), ' ')}</h1>
+    <h1>{user:current()}</h1>
+    <p>session-id : {session:id()}</p>
+    <p>session-created : {session:created()}</p>
+    <p>session-ids : {fn:string-join(sessions:ids()}</p>
 </html>
 };
 
