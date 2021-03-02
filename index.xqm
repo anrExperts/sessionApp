@@ -8,7 +8,7 @@ function test:index() {
         <current>{user:current()}</current>
         <id>{session:id()}</id>
         <created>{session:created()}</created>
-        <list-details>{user:list-details()}</div>
+        <list-details>{user:list-details()}</list-details>
     </div>
 };
 
