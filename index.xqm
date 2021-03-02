@@ -91,3 +91,94 @@ function test:logout() {
   session:delete("id"),
   web:redirect("/index/login")
 };
+
+
+(:~ Login page (visible to everyone). :)
+declare
+  %rest:path("/login")
+  %output:method("html")
+function local:login() {
+  <html>
+    Please log in:
+    <form action="/login-check" method="post">
+      <input name="name"/>
+      <input type="password" name="pass"/>
+      <input type="submit"/>
+    </form>
+  </html>
+};
+
+(:~ Main page (restricted to logged in users). :)
+declare
+  %rest:path("/main")
+  %output:method("html")
+function local:main() {
+  <html>
+    Welcome to the main page:
+    <a href='/main/admin'>admin area</a>,
+    <a href='/logout'>log out</a>.
+  </html>
+};
+
+(:~ Admin page. :)
+declare
+  %rest:path("/main/admin")
+  %output:method("html")
+  %perm:allow("admin")
+function local:admin() {
+  <html>
+    Welcome to the admin page.
+  </html>
+};
+
+import module namespace Session = 'http://basex.org/modules/session';
+
+(:~
+ : Global permission checks.
+ : Rejects any usage of the HTTP DELETE method.
+ :)
+declare %perm:check %rest:DELETE function local:check() {
+  error((), 'Access denied to DELETE method.')
+};
+
+(:~
+ : Permission check: Area for logged-in users.
+ : Checks if a session id exists for the current user; if not, redirects to the login page.
+ :)
+declare %perm:check('/main') function local:check-app() {
+  let $user := Session:get('id')
+  where empty($user)
+  return web:redirect('/')
+};
+
+(:~
+ : Permissions: Admin area.
+ : Checks if the current user is admin; if not, redirects to the main page.
+ : @param $perm  map with permission data
+ :)
+declare %perm:check('/main/admin', '{$perm}') function local:check-admin($perm) {
+  let $user := Session:get('id')
+  where not(user:list-details($user)/@permission = $perm?allow)
+  return web:redirect('/main')
+};
+
+declare
+  %rest:path("/login-check")
+  %rest:query-param("name", "{$name}")
+  %rest:query-param("pass", "{$pass}")
+function local:login($name, $pass) {
+  try {
+    user:check($name, $pass),
+    Session:set('id', $name),
+    web:redirect("/main")
+  } catch user:* {
+    web:redirect("/")
+  }
+};
+
+declare
+  %rest:path("/logout")
+function local:logout() {
+  Session:delete('id'),
+  web:redirect("/")
+};
