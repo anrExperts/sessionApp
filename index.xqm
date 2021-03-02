@@ -70,7 +70,7 @@ declare
 function test:login-check($user, $pwd) {
     try {
         user:check($user, $pwd),
-        sessions:set('id', $user),
+        session:set('id', $user),
         web:redirect("/index")
     }
     catch user:* {
@@ -82,6 +82,6 @@ function test:login-check($user, $pwd) {
 declare
   %rest:path("/index/logout")
 function test:logout() {
-  sessions:delete('node01m9znr1q2vo7m1u4fik61m6ig70', 'node01m9znr1q2vo7m1u4fik61m6ig70'),
+  session:delete("id"),
   web:redirect("/index/login")
 };
