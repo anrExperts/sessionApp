@@ -7,6 +7,7 @@ function test:index() {
     <div>
         <current>{user:current()}</current>
         <id>{session:id()}</id>
+        <session-get>{session:get(session:id())}</session-get>
         <created>{session:created()}</created>
         <list-details>{user:list-details()}</list-details>
     </div>
