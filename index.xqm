@@ -4,7 +4,7 @@ declare
 %rest:path('/index')
 %output:method('xml')
 function test:index() {
-    user:list-details()
+    <div>{user:list-details()}</div>
 };
 
 declare
@@ -70,7 +70,7 @@ declare
 function test:login-check($user, $pwd) {
     try {
         user:check($user, $pwd),
-        session:set('id', $user),
+        sessions:set('id', $user),
         web:redirect("/index")
     }
     catch user:* {
