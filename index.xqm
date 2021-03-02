@@ -4,10 +4,12 @@ declare
 %rest:path('/index')
 %output:method('xml')
 function test:index() {
-    <current>{user:current()}</current>
-    <id>{session:id()}</id>
-    <created>{session:created()}</created>
-    <div>{user:list-details()}</div>
+    <div>
+        <current>{user:current()}</current>
+        <id>{session:id()}</id>
+        <created>{session:created()}</created>
+        <list-details>{user:list-details()}</div>
+    </div>
 };
 
 declare
