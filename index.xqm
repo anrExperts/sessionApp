@@ -9,7 +9,7 @@ function test:index() {
     <h1>{user:current()}</h1>
     <p>session-id : {session:id()}</p>
     <p>session-created : {session:created()}</p>
-    <p>session-ids : {fn:string-join(sessions:ids())}</p>
+    <p>session-ids : {fn:string-join(sessions:ids(), ' ')}</p>
 </html>
 };
 
