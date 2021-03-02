@@ -1,4 +1,4 @@
-module namespace test = "test" ;
+module namespace local = "local" ;
 
 (:~ declare
 %rest:path('/index')
