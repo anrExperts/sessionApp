@@ -1,5 +1,5 @@
 module namespace local = "local" ;
-
+import module namespace Session = 'http://basex.org/modules/session';
 (:~ declare
 %rest:path('/index')
 %output:method('xml')
@@ -131,7 +131,6 @@ function local:admin() {
   </html>
 };
 
-import module namespace Session = 'http://basex.org/modules/session';
 
 (:~
  : Global permission checks.
