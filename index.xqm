@@ -95,7 +95,7 @@ function test:logout() {
 
 (:~ Login page (visible to everyone). :)
 declare
-  %rest:path("/login")
+  %rest:path("/e/login")
   %output:method("html")
 function local:login() {
   <html>
