@@ -1,6 +1,6 @@
 module namespace test = "test" ;
 
-declare
+(:~ declare
 %rest:path('/index')
 %output:method('xml')
 function test:index() {
@@ -90,7 +90,7 @@ declare
 function test:logout() {
   session:delete("id"),
   web:redirect("/index/login")
-};
+}; ~:)
 
 
 (:~ Login page (visible to everyone). :)
