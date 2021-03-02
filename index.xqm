@@ -127,7 +127,7 @@ declare
   %perm:allow("admin")
 function local:admin() {
   <html>
-    Welcome to the admin page.
+    Welcome to the admin page. You are {user:list-details($user)/@name}
   </html>
 };
 
