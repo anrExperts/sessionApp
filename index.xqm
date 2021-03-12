@@ -1,106 +1,60 @@
-module namespace local = "local" ;
+xquery version '3.0' ;
+module namespace xpr.session = "xpr.session" ;
+(:~
+ : This xquery module is an application for xpr
+ :
+ : @author emchateau & sardinecan (ANR Experts)
+ : @since 2019-01
+ : @licence GNU http://www.gnu.org/licenses
+ : @version 0.2
+ :
+ : xpr is free software: you can redistribute it and/or modify
+ : it under the terms of the GNU General Public License as published by
+ : the Free Software Foundation, either version 3 of the License, or
+ : (at your option) any later version.
+ :
+ :)
 import module namespace Session = 'http://basex.org/modules/session';
-(:~ declare
-%rest:path('/index')
-%output:method('xml')
-function test:index() {
-    <div>
-        <current>{user:current()}</current>
-        <id>{session:id()}</id>
-        <session-get>{session:get(session:id())}</session-get>
-        <created>{session:created()}</created>
-        <list-details>{user:list-details()}</list-details>
-    </div>
-};
 
-declare
-%rest:path('/index/new')
-%output:method('html')
-%output:html-version('5.0')
-function test:new() {
-<html>
-    <head></head>
-    <body>
-        <form action="create-user" method="POST">
-            <input type="text" placeholder="enter user name" name="user" required="true"/>
-            <input type="text" placeholder="enter password" name="pwd" required="true"/>
-            <input type='submit' value='créer'/>
-        </form>
-    </body>
-</html>
-};
+import module namespace xpr.xpr = 'xpr.xpr' at '../xpr/xpr.xqm' ;
+import module namespace G = 'xpr.globals' at '../xpr/globals.xqm' ;
+import module namespace xpr.mappings.html = 'xpr.mappings.html' at '../xpr/mappings.html.xqm' ;
+import module namespace xpr.models.xpr = 'xpr.models.xpr' at '../xpr/models.xpr.xqm' ;
+import module namespace xpr.models.networks = 'xpr.models.networks' at '../xpr/models.networks.xqm' ;
 
-declare
-%rest:POST
-%rest:path('/index/create-user')
-%rest:query-param('user', '{$user}')
-%rest:query-param('pwd', '{$pwd}')
-%updating
-function test:create-user($user, $pwd) {
-    user:create($user, $pwd, 'read'),
-    update:output(web:redirect('/index/login'))
-(:<html>
-    <head></head>
-    <body>
-        <h1>{$user}</h1>
-    </body>
-</html>:)
-};
+declare namespace rest = "http://exquery.org/ns/restxq" ;
+declare namespace file = "http://expath.org/ns/file" ;
+declare namespace output = "http://www.w3.org/2010/xslt-xquery-serialization" ;
+declare namespace db = "http://basex.org/modules/db" ;
+declare namespace web = "http://basex.org/modules/web" ;
+declare namespace update = "http://basex.org/modules/update" ;
+declare namespace perm = "http://basex.org/modules/perm" ;
+declare namespace user = "http://basex.org/modules/user" ;
+declare namespace session = 'http://basex.org/modules/session' ;
+declare namespace http = "http://expath.org/ns/http-client" ;
 
-declare
-%rest:path('/index/login')
-%output:method('html')
-%output:html-version('5.0')
-function test:login() {
-<html>
-    <head></head>
-    <body>
-        <ul>
-            {for $i in user:list()
-            return <li>{$i}</li>}
-        </ul>
-        <form action="login-check" method="POST">
-            <input type="text" placeholder="enter user name" name="user" required="true"/>
-            <input type="text" placeholder="enter password" name="pwd" required="true"/>
-            <input type='submit' value='Login'/>
-        </form>
-    </body>
-</html>
-};
+declare namespace ev = "http://www.w3.org/2001/xml-events" ;
+declare namespace eac = "eac" ;
 
-declare
-%rest:POST
-%rest:path('/index/login-check')
-%rest:query-param('user', '{$user}')
-%rest:query-param('pwd', '{$pwd}')
-function test:login-check($user, $pwd) {
-    try {
-        user:check($user, $pwd),
-        session:set('id', $user),
-        web:redirect("/index")
-    }
-    catch user:* {
-        web:redirect("/")
-    }
-};
+declare namespace map = "http://www.w3.org/2005/xpath-functions/map" ;
+declare namespace xf = "http://www.w3.org/2002/xforms" ;
+declare namespace xlink = "http://www.w3.org/1999/xlink" ;
 
+declare namespace xpr = "xpr" ;
+declare default element namespace "xpr" ;
+declare default function namespace "xpr.xpr" ;
 
-declare
-  %rest:path("/index/logout")
-function test:logout() {
-  session:delete("id"),
-  web:redirect("/index/login")
-}; ~:)
+declare default collation "http://basex.org/collation?lang=fr" ;
 
 
 (:~ Login page (visible to everyone). :)
 declare
-  %rest:path("/e/login")
+  %rest:path("xpr/login")
   %output:method("html")
-function local:login() {
+function xpr.session:login() {
   <html>
     Please log in:
-    <form action="/login-check" method="post">
+    <form action="/xpr/login/check" method="post">
       <input name="name"/>
       <input type="password" name="pass"/>
       <input type="submit"/>
@@ -112,7 +66,7 @@ function local:login() {
 declare
   %rest:path("/main")
   %output:method("html")
-function local:main() {
+function xpr.session:main() {
   <html>
     Welcome to the main page:
     <a href='/main/admin'>admin area</a>,
@@ -125,47 +79,77 @@ declare
   %rest:path("/main/admin")
   %output:method("html")
   %perm:allow("admin")
-function local:admin() {
+function xpr.session:admin() {
   <html>
     Welcome to the admin page. You are {fn:string(user:list-details(Session:get('id'))/@name)}
   </html>
 };
 
+(:~ Admin page. :)
+declare
+  %rest:path("/who")
+  %output:method("html")
+function xpr.session:who() {
+  <html>
+    Welcome to the who page. You are
+    <code>{user:list-details(Session:get('id'))}</code>
+  </html>
+};
 
 (:~
  : Global permission checks.
  : Rejects any usage of the HTTP DELETE method.
  :)
-declare %perm:check %rest:DELETE function local:check() {
-  error((), 'Access denied to DELETE method.')
+declare
+    %perm:check
+    %rest:DELETE
+function xpr.session:check() {
+  fn:error((), 'Access denied to DELETE method.')
 };
 
 (:~
  : Permission check: Area for logged-in users.
  : Checks if a session id exists for the current user; if not, redirects to the login page.
  :)
-declare %perm:check('/main') function local:check-app() {
+declare
+    %perm:check('/main')
+function xpr.session:check-app() {
   let $user := Session:get('id')
-  where empty($user)
+  where fn:empty($user)
   return web:redirect('/')
 };
 
 (:~
  : Permissions: Admin area.
  : Checks if the current user is admin; if not, redirects to the main page.
- : @param $perm  map with permission data
+ : @param $perm map with permission data
  :)
-declare %perm:check('/main/admin', '{$perm}') function local:check-admin($perm) {
+declare
+    %perm:check('/main/admin', '{$perm}')
+function xpr.session:check-admin($perm) {
   let $user := Session:get('id')
-  where not(user:list-details($user)/@permission = $perm?allow)
+  where fn:not(user:list-details($user)/@permission = $perm?allow)
   return web:redirect('/main')
 };
 
+(:~
+ : Permissions: Admin area.
+ : Checks if the current user is admin; if not, redirects to the main page.
+ : @param $perm map with permission data
+ :)
 declare
-  %rest:path("/login-check")
+    %perm:check('xpr/expertises/new', '{$perm}')
+function xpr.session:checkExpertiseRight($perm) {
+  let $user := Session:get('id')
+  where fn:empty($user) or fn:not(user:list-details($user)/*:info/*:grant/@type = $perm?allow)
+  return web:redirect('/xpr/login')
+};
+
+declare
+  %rest:path("xpr/login/check")
   %rest:query-param("name", "{$name}")
   %rest:query-param("pass", "{$pass}")
-function local:login($name, $pass) {
+function xpr.session:login($name, $pass) {
   try {
     user:check($name, $pass),
     Session:set('id', $name),
@@ -176,8 +160,61 @@ function local:login($name, $pass) {
 };
 
 declare
-  %rest:path("/logout")
-function local:logout() {
+  %rest:path("xpr/logout")
+function xpr.session:logout() {
   Session:delete('id'),
   web:redirect("/")
+};
+
+(:~
+ : This function creates a new user
+ : @return an xforms to create a new user
+:)
+declare
+  %rest:path("xpr/users/new")
+  %output:method("xml")
+function xpr.session:newUser() {
+  let $content := map {
+    'instance' : '',
+    'model' : 'xprUserModel.xml',
+    'trigger' : '',
+    'form' : 'xprUserForm.xml'
+  }
+  let $outputParam := map {
+    'layout' : "template.xml"
+  }
+  return
+    (processing-instruction xml-stylesheet { fn:concat("href='", $G:xsltFormsPath, "'"), "type='text/xsl'"},
+    <?css-conversion no?>,
+    xpr.models.xpr:wrapper($content, $outputParam)
+    )
+};
+
+(:~
+ : This function creates new user
+ :)
+declare
+  %rest:path("xpr/users/put")
+  %output:method("xml")
+  %rest:header-param("Referer", "{$referer}", "none")
+  %rest:PUT("{$param}")
+  %updating
+function xpr.session:putUser($param, $referer) {
+  let $db := db:open("xpr")
+  let $user := $param
+  let $userName := fn:normalize-space($user/*:user/*:name)
+  let $userPwd := fn:normalize-space($user/*:user/*:password)
+  let $userPermission := fn:normalize-space($user/*:user/*:permission)
+  let $userInfo :=
+    <info xmlns="">{
+        for $right in $user/*:user/*:info/*:grant
+        return <grant type="{$right/@type}">{fn:normalize-space($right)}</grant>
+    }</info>
+  return
+    user:create(
+      $userName,
+      $userPwd,
+      $userPermission,
+      'xpr',
+      $userInfo)
 };
